@@ -1,0 +1,1651 @@
+---
+title: "Final Paper"
+author: "STOR 320.01 Group 05"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(modelr)
+library(broom)
+library(purrr)
+library(class)
+library(plotly)
+library(mice)
+library(car)
+library(gridExtra)
+library(scales)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(DT)
+```
+
+```{r, message = F, echo=FALSE, include=FALSE}
+countries_to_remove <- c("Africa Eastern and Southern", "Africa Western and Central", "Arab World", "Caribbean small states", "Central Europe and the Baltics", "Channel Islands", "Czech Republic", "Early-demographic dividend", "East Asia & Pacific (IDA & IBRD countries)", "East Asia & Pacific (excluding high income)", "Europe & Central Asia (IDA & IBRD countries)", "Europe & Central Asia (excluding high income)", "European Union", "Fragile and conflict affected situations", "Heavily indebted poor countries (HIPC)", "High income", "IDA & IBRD total", "IDA blend", "IDA only", "IDA total", "Korea, Dem. People's Rep.", "Late-demographic dividend", "Latin America & Caribbean (excluding high income)", "Latin America & the Caribbean (IDA & IBRD countries)", "Least developed countries: UN classification", "Low & middle income", "Low income", "Lower middle income", "Macao SAR, China", "Micronesia, Fed. Sts.", "Middle East & North Africa (IDA & IBRD countries)", "Middle East & North Africa (excluding high income)", "Middle income", "Not classified", "OECD members", "Other small states", "Pacific island small states", "Post-demographic dividend", "Pre-demographic dividend", "Sint Maarten (Dutch part)", "Small states", "South Asia (IDA & IBRD)", "St. Martin (French part)", "St. Vincent and the Grenadines", "Sub-Saharan Africa (IDA & IBRD countries)", "Sub-Saharan Africa (excluding high income)", "Upper middle income", "IBRD only", "Euro area", "American Samoa", "Turks and Caicos Islands", "Northern Mariana Islands", "Cayman Islands", "Virgin Islands (U.S.)", "Hong Kong SAR, China", "Kosovo", "Curacao", "Gibraltar", "British Virgin Islands", "Isle of Man", "New Caledonia", "Faroe Islands", "French Polynesia", "Monaco", "San Marino", "Greenland", "Guam", "Aruba", "Bermuda", "Puerto Rico", "West Bank and Gaza", "Palou", "Nauru", "Andorra", "Liechtenstein", "Palau", "Turkey", "Marshall Islands", "Tuvalu", "St. Kitts and Nevis", "Dominica", "Vietnam")
+
+DATA <- read_csv("world_bank_data.csv") %>%
+  mutate(date = as.numeric(format(as.Date(date, format="%Y-%m-%d"), "%Y")),
+         population = as.numeric(population),
+         GDP_per_capita = GDP_current_US / population) %>%
+         rename(gov_health_exp = `government_health_expenditure%`, agricultural_land =
+                  `agricultural_land%`, access_to_electricity = `access_to_electricity%`, 
+                renewable_energy_consumption = `renewvable_energy_consumption%`, 
+                individuals_using_internet = `individuals_using_internet%`, forest_land= 
+                  `forest_land%`) %>%
+  filter(!country %in% countries_to_remove, date >= 2000, date <= 2020) %>% 
+ select(-human_capital_index, 
+         -doing_business, 
+         -time_to_get_operation_license, 
+         -statistical_performance_indicators, 
+         -`multidimensional_poverty_headcount_ratio%`, 
+         -`trade_in_services%`, 
+         -control_of_corruption_estimate, 
+         -control_of_corruption_std, 
+         -electric_power_consumption, 
+         -`inflation_annual%`, 
+         -real_interest_rate, 
+         -risk_premium_on_lending, 
+         -`research_and_development_expenditure%`, 
+         -`central_goverment_debt%`, 
+         -`tax_revenue%`, 
+         -`expense%`, 
+         -goverment_effectiveness_estimate, 
+         -goverment_effectiveness_std, 
+         -logistic_performance_index, 
+         -`military_expenditure%`, 
+         -regulatory_quality_estimate, 
+         -regulatory_quality_std, 
+         -`government_expenditure_on_education%`, 
+         -gini_index, 
+         -intentional_homicides,
+         -avg_precipitation,
+         -political_stability_std,
+         -voice_and_accountability_std,
+         -rule_of_law_std,
+         -rural_population)
+
+#Template for adding additional columns from World Bank
+#inflation_data <- read_csv("inflation_consumer_prices.csv") %>%
+#  select(country, `2000`:`2021`) %>%
+#  pivot_longer(cols = `2000`:`2021`, names_to = "date", values_to = "inflation_consumer_prices") %>%
+#  mutate(date = as.numeric(date))
+#DATA <- left_join(DATA, inflation_data, by = c("country", "date"))
+
+maternal_mortality_ratio <- read_csv("maternal_mortality_ratio.csv") %>%
+  select(country, `2000`:`2020`) %>%
+  pivot_longer(cols = `2000`:`2020`, names_to = "date", values_to = "maternal_mortality_ratio") %>%
+  mutate(date = as.numeric(date))
+DATA <- left_join(DATA, maternal_mortality_ratio, by = c("country", "date"))
+
+csv_files_and_columns <- list(
+  "agricultural_land_2021.csv" = "agricultural_land",
+  "forest_land_2021.csv" = "forest_land",
+  "land_area_2021.csv" = "land_area",
+  "access_to_electricity_2021.csv" = "access_to_electricity",
+  "renewable_energy_consumption_2021.csv" = "renewable_energy_consumption",
+  "population_density_2021.csv" = "population_density",
+  "Population_Total_2021.csv" = "population",
+  "individuals_using_internet_2021.csv" = "individuals_using_internet",
+  "GDP_Current_US_2021.csv" = "GDP_current_US",
+  "political_stability_estimate_2021.csv" = "political_stability_estimate",
+  "rule_of_law_estimate_2021.csv" = "rule_of_law_estimate",
+  "voice_and_accountability_estimate_2021.csv" = "voice_and_accountability_estimate",
+  "birth_rate_2021.csv" = "birth_rate",
+  "Death_Rates_2021.csv" = "death_rate",
+  "life_expectancy_at_birth_2021.csv" = "life_expectancy_at_birth")
+
+for (file_name in names(csv_files_and_columns)) {
+  column_name <- csv_files_and_columns[[file_name]]
+  
+  new_data <- read_csv(file_name) %>%
+    pivot_longer(cols = matches("^[0-9]{4}$"), names_to = "date", values_to = column_name) %>%
+    mutate(date = as.numeric(date)) %>%
+    select(country, date, !!sym(column_name))
+
+  updated_DATA <- left_join(DATA, new_data, by = c("country", "date"), suffix = c("", ".new"))
+  
+  new_column_name <- paste0(column_name, ".new")
+  updated_DATA <- updated_DATA %>%
+    mutate(!!sym(column_name) := coalesce(!!sym(new_column_name), !!sym(column_name))) %>%
+    select(-!!sym(new_column_name))
+  
+  if (column_name == "GDP_current_US") {
+    updated_DATA <- updated_DATA %>%
+      mutate(GDP_per_capita = if_else(!is.na(GDP_current_US) & !is.na(population), GDP_current_US / population, NA_real_))
+  }
+
+  DATA <- updated_DATA
+}
+
+cat("Number of distinct countries in the dataset: ", n_distinct(DATA$country), "\n")
+glimpse(DATA)
+arrange(DATA, desc(GDP_per_capita))
+```
+```{r, echo=FALSE, include=FALSE}
+# The number of NAs for each country for all variables
+na_counts <- DATA %>%
+  group_by(country) %>%
+  summarise(across(.cols = everything(), .fns = ~ sum(is.na(.)), .names = "NAs_{.col}")) %>%
+  mutate(Total_NAs = rowSums(select(., starts_with("NAs_")))) %>%
+  arrange(desc(Total_NAs))
+
+print(na_counts)
+
+# Total number of NAs for each variable across all countries
+na_summary <- DATA %>%
+  summarise(across(.cols = everything(), .fns = ~ sum(is.na(.)), .names = "Total_NAs_{.col}"))
+
+print(na_summary)
+
+# The percentage of NAs for each variable across all countries
+na_percentage <- DATA %>%
+  summarise(across(.cols = everything(), .fns = ~ mean(is.na(.)) * 100, .names = "NA_Percent_{.col}"))
+
+print(na_percentage)
+
+# Variables to impute: agricultural_land, forest_land, land_area, access_to_electricity, renewable_energy_consumption, CO2_emisions, other_greenhouse_emisions, population_density, individuals_using_internet, GDP_current_US, political_stability_estimate, rule_of_law_estimate, gov_health_exp, voice_and_accountability_estimate, GDP_per_capita
+```
+
+
+
+```{r, echo=FALSE, include=FALSE}
+threshold <- 10  # Threshold for percentage of NA values above which we might consider removing the variable
+# It would be safest to choose a 10% missing data threshold: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8426774
+
+high_na_vars <- names(na_percentage)[which(na_percentage > threshold)]
+high_na_vars
+
+```
+
+```{r, warning = F, echo=FALSE, include=FALSE, fig.align='center', fig.width=9, fig.height=7}
+numeric_data <- DATA %>%
+  select_if(is.numeric)
+
+correlations <- cor(numeric_data, use = "pairwise.complete.obs")
+
+diag(correlations) <- NA
+
+p <- plot_ly(x = colnames(correlations), y = colnames(correlations), z = correlations, 
+             type = "heatmap", colors = colorRamp(c("blue", "white", "red")),
+             colorbar = list(title = "Correlation")) %>%
+      layout(title = "Correlation Matrix",
+             xaxis = list(tickangle = 45, tickfont = list(size = 10)),
+             yaxis = list(tickangle = 0, tickfont = list(size = 10)),
+             margin = list(l = 160, r = 10, b = 150, t = 80))
+p
+```
+
+```{r, include=FALSE, echo=FALSE}
+correlations
+```
+
+
+```{r plot-distributions, fig.width=15, fig.height=15, warning = F, include=FALSE, echo=FALSE}
+# 
+# #Before we use imputation, we have to note the distribution of the variables. They should remain similar post-imputation.
+# 
+# vars_to_plot <- setdiff(names(DATA), "date")
+# 
+# plot_list <- lapply(vars_to_plot, function(var) {
+#   if(is.numeric(DATA[[var]])) {
+#     p <- ggplot(DATA, aes_string(x = var)) + 
+#       geom_histogram(bins = 30, fill = "blue", color = "black") + 
+#       theme_minimal() + 
+#       ggtitle(paste("Distribution of", var))
+#     return(p)
+#   }
+# })
+# 
+# plot_list <- plot_list[!sapply(plot_list, is.null)]
+# 
+# do.call(grid.arrange, c(plot_list, ncol = 4))
+
+```
+
+
+```{r, include=FALSE, echo=FALSE}
+# Using the cart method. method PMM threw errors due to the multicollinearity, but cart shows just as good or better results: https://www.appsilon.com/post/imputation-in-r
+
+variables_to_impute <- c("agricultural_land", "forest_land", "land_area", "access_to_electricity", "renewable_energy_consumption", "CO2_emisions", "other_greenhouse_emisions", "population_density", "individuals_using_internet", "GDP_current_US", "political_stability_estimate", "rule_of_law_estimate", "gov_health_exp", 
+"voice_and_accountability_estimate", "GDP_per_capita")
+
+default_meth <- mice::mice(DATA %>% filter(date >= 2000, date <= 2022), maxit=0)$method
+
+default_meth[variables_to_impute] <- "cart"
+
+imp_data <- mice(DATA, m=1, maxit=5, meth=default_meth, seed=500)
+```
+
+```{r plot-distributions2, fig.width=15, fig.height=15, warning = F, include=FALSE, echo=FALSE}
+
+# Completing the data with the first set of imputed values for examination (it will do fine in our case)
+
+completed_data <- complete(imp_data, 1)
+
+vars_to_plot <- setdiff(names(completed_data), "date")
+
+plot_list <- lapply(vars_to_plot, function(var) {
+  if(is.numeric(completed_data[[var]])) {
+    p <- ggplot(completed_data, aes_string(x = var)) +
+      geom_histogram(bins = 30, fill = "blue", color = "black") +
+      theme_minimal() +
+      ggtitle(paste("Distribution of", var))
+    return(p)
+  }
+})
+
+plot_list <- plot_list[!sapply(plot_list, is.null)]
+
+do.call(grid.arrange, c(plot_list, ncol = 4))
+
+```
+
+
+```{r, include=FALSE, echo=FALSE}
+#the distributions look almost completely the same, so it did a great job. Add these imputations to our dataset:
+DATA <- completed_data
+```
+
+```{r, echo=FALSE, include=FALSE}
+# The number of NAs for each country for all variables
+na_counts <- DATA %>%
+  group_by(country) %>%
+  summarise(across(.cols = everything(), .fns = ~ sum(is.na(.)), .names = "NAs_{.col}")) %>%
+  mutate(Total_NAs = rowSums(select(., starts_with("NAs_")))) %>%
+  arrange(desc(Total_NAs))
+
+print(na_counts)
+
+#total number of NAs
+na_summary <- DATA %>%
+  summarise(across(everything(), ~ sum(is.na(.))))
+print(na_summary)
+
+#percentage
+na_percentage <- DATA %>%
+  summarise(across(everything(), ~ mean(is.na(.)) * 100))
+print(na_percentage)
+# no missing data. Let's do one or two more things to make our dataset ready for modeling like scaling our variables or using log variables
+```
+
+```{r, echo=FALSE, include=FALSE}
+# Old plot cluttered, prob not useful
+
+#year_summary <- DATA %>%
+#  group_by(country) %>%
+#  summarize(start_year = min(date), end_year = max(date), .groups = 'drop')
+
+#year_plot <- ggplot(year_summary, aes(x = start_year, y = reorder(country, start_year))) +
+#  geom_point(aes(color = "Start Year"), size = 2) +
+#  geom_point(aes(x = end_year, color = "End Year"), size = 2) +
+#  labs(title = "Start and End Years for Data by Country",
+#       x = "Year", y = "Country") +
+#  scale_color_manual(name = "Year Type", values = c("Start Year" = "blue", "End Year" = "red")) +
+#  theme_minimal() +
+#  theme(axis.text.y = element_text(size = 5))
+
+#ggplotly(year_plot, tooltip = c("x", "y", "color"))
+
+#Now we have complete data/no NAs and all the countries' start and end data are the same.
+```
+
+
+```{r, include=FALSE, echo=FALSE}
+#given the level of skewness present in all our variable distributions, let's add log transformations of them to our dataset. Also add lag variables for future use.
+
+DATA <- DATA %>%
+  arrange(country, date) %>%
+  group_by(country) %>%
+  mutate(
+    # Log transformations
+    log_agricultural_land = log(agricultural_land + 1),
+    log_forest_land = log(forest_land + 1),
+    log_land_area = log(land_area + 1),
+    log_access_to_electricity = log(access_to_electricity + 1),
+    log_renewable_energy_consumption = log(renewable_energy_consumption + 1),
+    log_CO2_emissions = log(CO2_emisions + 1),
+    log_other_greenhouse_emissions = log(other_greenhouse_emisions + 1),
+    log_population_density = log(population_density + 1),
+    log_individuals_using_internet = log(individuals_using_internet + 1),
+    log_gov_health_exp = log(gov_health_exp + 1),
+    log_death_rate = log(death_rate + 1),
+    log_life_expectancy_at_birth = log(life_expectancy_at_birth),
+    
+    # Lag transformations
+    lag_agricultural_land = lag(agricultural_land),
+    lag_forest_land = lag(forest_land),
+    lag_land_area = lag(land_area),
+    lag_access_to_electricity = lag(access_to_electricity),
+    lag_renewable_energy_consumption = lag(renewable_energy_consumption),
+    lag_CO2_emissions = lag(CO2_emisions),
+    lag_other_greenhouse_emissions = lag(other_greenhouse_emisions),
+    lag_population_density = lag(population_density),
+    lag_individuals_using_internet = lag(individuals_using_internet),
+    lag_GDP_current_US = lag(GDP_current_US),
+    lag_gov_health_exp = lag(gov_health_exp),
+    lag_birth_rate = lag(birth_rate),
+    lag_death_rate = lag(death_rate),
+    lag_life_expectancy_at_birth = lag(life_expectancy_at_birth),
+    lag_population = lag(population),
+    lag_GDP_per_capita = lag(GDP_per_capita)) %>%
+  ungroup()
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+str(DATA)
+```
+
+
+
+```{r, include=FALSE, echo=FALSE}
+set.seed(216)
+
+DATA2 <- crossv_kfold(DATA, k = 25)
+
+head(DATA2)
+```
+
+```{r, include=FALSE, echo=FALSE}
+MAE.func <- function(actual, predict) {
+  mae = mean(abs(actual - predict), na.rm = TRUE)
+  return(mae)
+}
+
+
+train.model.func <- function(data, I, J) {
+  mod = lm(death_rate ~ poly(GDP_per_capita, I) + poly(date, J), data = data)
+  return(mod)
+}
+```
+
+```{r, warning = F, include=FALSE, echo=FALSE}
+OUT.MAE = matrix(NA, 9, 9)
+
+for (I in 1:9) {
+  for (J in 1:9) {
+    DATA3 <- DATA2 %>%
+      mutate(
+        tr.model = map(train, train.model.func, I = I, J = J),
+        predict = map2(test, tr.model, ~ augment(.y, newdata = .x))
+      ) %>%
+      select(predict) %>%
+      unnest()
+
+    OUT.MAE[I, J] = MAE.func(actual = DATA3$death_rate, predict = DATA3$.fitted)
+  }
+}
+
+print(OUT.MAE)
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+OUT.MAE2 <- as_tibble(OUT.MAE) %>%
+  mutate(I = row_number()) %>%
+  pivot_longer(
+    cols = -I,
+    names_to = "J",
+    values_to = "MAE",
+    names_prefix = "V",
+    names_transform = list(J = as.integer)
+  )
+
+BEST3.MAE <- OUT.MAE2 %>%
+  arrange(MAE) %>%
+  slice_head(n = 3)
+
+print(BEST3.MAE)
+
+```
+
+
+
+
+
+```{r, include=FALSE, echo=FALSE}
+# Let's try to improve the model with extra interaction terms
+
+train.model.interact <- function(data, I, J) {
+  mod <- lm(death_rate ~ poly(GDP_per_capita, I) * poly(date, J), data = data)
+  return(mod)
+}
+
+```
+
+```{r, warning = F, include=FALSE, echo=FALSE}
+# Adjust the existing DATA2 to include interaction model predictions and calculate MAE
+DATA3 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.interact(.x, I = 9, J = 3)),  # Using the best I and J from earlier
+    predict = map2(test, tr.model, ~ augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest()
+
+interaction_MAE <- MAE.func(actual = DATA3$death_rate, predict = DATA3$.fitted)
+print(interaction_MAE)
+
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Assuming `best_model_MAE` is stored from earlier models without interaction
+best_model_MAE <- min(OUT.MAE)  # Get the minimum MAE from the original matrix for comparison
+
+# Compare MAE values
+print(paste("Best Original Model MAE:", best_model_MAE))
+print(paste("Interaction Model MAE:", interaction_MAE))
+
+
+
+```
+
+```{r include=FALSE, echo=FALSE}
+# # Fit the final selected model on the entire dataset
+# final_model <- train.model.interact(DATA, I = 9, J = 3)
+# 
+# # Make predictions across the dataset
+# DATA$predicted <- predict(final_model, newdata = DATA)
+# 
+# # Plot actual vs. predicted death rates
+# ggplot(DATA, aes(x = date, y = death_rate)) +
+#   geom_point(aes(color = "Actual"), alpha = 0.5) +
+#   geom_line(aes(y = predicted, color = "Predicted")) +
+#   labs(x = "Year", y = "Death Rate", title = "Actual vs. Predicted Death Rates") +
+#   theme_minimal() +
+#   scale_color_manual(values = c("Actual" = "blue", "Predicted" = "red"))
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Define a function to train models with interactions
+train.model.interactions <- function(data) {
+  lm(death_rate ~ poly(GDP_per_capita, 3) * poly(date, 3) + 
+       poly(GDP_per_capita, 3) * gov_health_exp +
+       poly(GDP_per_capita, 3) * access_to_electricity +
+       poly(GDP_per_capita, 3) * individuals_using_internet, 
+     data = data)
+}
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+cv_results <- DATA2 %>% 
+  mutate(
+    tr.model = map(train, train.model.interactions),
+    predictions = map2(tr.model, test, ~ augment(.x, newdata = .y))
+  ) %>%
+  unnest(predictions) 
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+interaction_MAE <- MAE.func(cv_results$death_rate, cv_results$.fitted)
+
+# Print out the MAE for the interaction model
+print(paste("Interaction Model MAE:", interaction_MAE))
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+final_model_interactions <- train.model.interactions(DATA)
+
+# Predict on the full dataset
+DATA$predicted_interactions <- predict(final_model_interactions, newdata = DATA)
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+# ggplot(DATA, aes(x = date, y = death_rate)) +
+#   geom_point(alpha = 0.5) +
+#   geom_line(aes(y = predicted_interactions, color = "Predicted with Interactions")) +
+#   labs(x = "Year", y = "Death Rate", title = "Actual vs. Predicted Death Rates with Interaction Terms") +
+#   theme_minimal() +
+#   scale_color_manual(values = c("Predicted with Interactions" = "red"))
+# 
+# summary(final_model_interactions)
+```
+
+```{r, include=FALSE, echo=FALSE}
+train.model.significant <- function(data) {
+  lm(death_rate ~ poly(date, 3) +  
+       individuals_using_internet +  
+       life_expectancy_at_birth +    
+       poly(GDP_per_capita, 3) +    
+       individuals_using_internet:GDP_per_capita, 
+     data = data)
+}
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+cv_results <- DATA2 %>%
+  mutate(
+    tr.model = map(train, train.model.significant),
+    predictions = map2(tr.model, test, ~augment(.x, newdata = .y))
+  ) %>%
+  unnest(predictions)
+```
+
+```{r, include=FALSE, echo=FALSE}
+significant_interaction_MAE <- MAE.func(cv_results$death_rate, cv_results$.fitted)
+
+print(paste("Significant Interaction Model MAE:", significant_interaction_MAE))
+```
+
+
+```{r, include=FALSE, echo=FALSE}
+# final_model_significant <- train.model.significant(DATA)
+# 
+# DATA$predicted_significant <- predict(final_model_significant, newdata = DATA)
+# 
+# ggplot(DATA, aes(x = date, y = death_rate)) +
+#   geom_point(alpha = 0.5) +
+#   geom_line(aes(y = predicted_significant, color = "Predicted with Significant Model")) +
+#   labs(x = "Year", y = "Death Rate", title = "Actual vs. Predicted Death Rates with Significant Model") +
+#   theme_minimal() +
+#   scale_color_manual(values = c("Predicted with Significant Model" = "green"))
+# 
+# summary(final_model_significant)
+# 
+
+```
+
+
+
+```{r, include=FALSE, echo=FALSE}
+# cv_results_nonlogged <- DATA2 %>%
+#   mutate(
+#     tr.model = map(train, train.model.nonlogged),
+#     predictions = map2(tr.model, test, ~augment(.x, newdata = .y))
+#   ) %>%
+#   unnest(predictions) %>%
+#   mutate(MSE = (death_rate - .fitted)^2)
+# 
+# avg_mse_nonlogged <- cv_results_nonlogged %>%
+#   summarise(avg_MSE = mean(MSE)) %>%
+#   pull(avg_MSE)
+# 
+# cv_results_logged <- DATA2 %>%
+#   mutate(
+#     tr.model = map(train, train.model.logged),
+#     predictions = map2(tr.model, test, ~augment(.x, newdata = .y))
+#   ) %>%
+#   unnest(predictions) %>%
+#   mutate(MSE = (exp(log_death_rate) - exp(.fitted))^2)
+# 
+# avg_mse_logged <- cv_results_logged %>%
+#   summarise(avg_MSE = mean(MSE)) %>%
+#   pull(avg_MSE)
+# 
+# mse_data <- data.frame(
+#   Model = c("Non-Logged Model", "Logged Model"),
+#   MSE = c(avg_mse_nonlogged, avg_mse_logged)
+# )
+# 
+# mse_plot <- ggplot(mse_data, aes(x = Model, y = MSE, fill = Model)) +
+#   geom_bar(stat = "identity") +
+#   labs(x = "Model Name", y = "Mean Squared Error", title = "Total MSE by Model") +
+#   theme_minimal() +
+#   scale_fill_manual(values = c("blue", "red"))
+# 
+# print(mse_plot)
+```
+
+```{r, include=FALSE, echo=FALSE}
+library(dplyr)
+
+# Assuming 'data' is your dataframe and 'iso_code' is the column you want to update
+DATA <- DATA %>%
+  mutate(iso_code = ifelse(iso_code == "SDS", "SSD", iso_code))
+
+# This code checks each entry in the 'iso_code' column:
+# If the value is 'SSD', it changes it to 'SDS';
+# If not, it leaves the value unchanged.
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Ensure you're filtering and selecting the correct variables
+data_heatmap <- DATA %>%
+    filter(date >= 2000, date <= 2021) %>%
+    select(iso_code, date, maternal_mortality_ratio)  # Adjust to the correct column name
+
+# Merge with world data, ensure world data also has iso_a3_eh
+world <- ne_countries(scale = "large", returnclass = "sf")
+
+# Ensure world data has an iso_a3_eh column. If it only has iso_a3, you might need to modify or manually map them.
+world_data_heatmap <- merge(world, data_heatmap, by.x = "iso_a3_eh", by.y = "iso_code", all.x = TRUE)
+
+```
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE, fig.align='center', fig.width=9, fig.height=7}
+# Determine the overall range of maternal mortality ratios for the fixed color scale
+mortality_ratio_range <- range(world_data_heatmap$maternal_mortality_ratio, na.rm = TRUE)
+
+# Convert the sf object to a regular data frame for Plotly
+world_data_df <- st_set_geometry(world_data_heatmap, NULL)
+
+# Plot using plotly with frames for animation
+p_interactive <- plot_geo(data = world_data_df, locations = ~iso_a3_eh, color = ~maternal_mortality_ratio,
+                          frame = ~date, text = ~paste("ISO Code:", iso_a3_eh, "<br>Maternal Mortality Ratio:", maternal_mortality_ratio),
+                          locationmode = 'ISO-3') %>%
+  add_trace(
+    type = 'choropleth',
+    z = ~maternal_mortality_ratio,
+    colorscale = list(c(0, "yellow"), c(1, "red")),  # Custom gradient from yellow to red
+    autocolorscale = FALSE,
+    zmin = mortality_ratio_range[1],  # Minimum of fixed color scale
+    zmax = mortality_ratio_range[2],  # Maximum of fixed color scale
+    marker = list(line = list(color = 'rgb(180,180,180)', width = 0.5))
+  ) %>%
+  colorbar(title = "Maternal Mortality Ratio") %>%
+  animation_opts(frame = 100, redraw = TRUE) %>%
+  layout(title = "World Maternal Mortality Ratio Heatmap",
+         geo = list(
+           projection = list(type = 'natural earth'),
+           showland = TRUE,
+           landcolor = 'gray'
+         ),
+         sliders = list(
+           list(
+             currentvalue = list(prefix = "Year: "),
+             steps = lapply(sort(unique(world_data_df$date)), function(year) {
+               list(method = "animate", args = list(list("frame", list(duration = 500, redraw = TRUE)), list(mode = "immediate")),
+                    label = as.character(year))
+             })
+           )
+         )
+        )
+
+# Show the interactive plot
+p_interactive
+
+```
+
+```{r, results='asis', echo=FALSE, include=FALSE}
+OV <- DATA %>%
+  select(1:23)
+data_2020 <- OV[OV$date == 2020, ]
+datatable(data_2020, extensions = 'Buttons', options = list(
+    scrollX = TRUE,
+    dom = 'Bfrtip',
+    buttons = list(
+      'colvis',  # Adds a button to select columns to display
+      list(
+        extend = "collection",
+        text = 'Export',
+        buttons = c('csv', 'excel', 'pdf')
+      )
+    ),
+    pageLength = 10
+  ),
+  caption = 'Data for the Year 2020'
+)
+```
+
+
+
+```{r, echo=FALSE, include=FALSE, fig.width=9, fig.height=7}
+mmr_data_regions <- DATA %>%
+  filter(country %in% c("East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
+                        "Middle East & North Africa", "North America", "South Asia", 
+                        "Sub-Saharan Africa", "World"))
+
+colors <- setNames(c("black", "orange", "cyan", "gray", "purple", "red", "green", "darkblue"),
+                   c("World", "East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
+                     "Middle East & North Africa", "North America", "South Asia", "Sub-Saharan Africa"))
+
+mmr_plotly <- plot_ly() %>%
+  add_lines(data = mmr_data_regions, x = ~date, y = ~maternal_mortality_ratio,
+            color = ~country, colors = colors,
+            hoverinfo = 'text', text = ~paste("Year:", date, "<br>Region:", country, "<br>MMR:", maternal_mortality_ratio)) %>%
+  layout(title = "Maternal mortality ratio (per 100,000 live births) by region, 2000-2020",
+         xaxis = list(title = "Year"),
+         yaxis = list(title = "Maternal Mortality Ratio"),
+         hovermode = 'closest')
+
+mmr_plotly <- mmr_plotly %>%
+  add_markers(data = mmr_data_regions[mmr_data_regions$date %% 5 == 0, ],
+              x = ~date, y = ~maternal_mortality_ratio,
+              marker = list(size = 6, color = ~country, colors = colors),
+              hoverinfo = 'text', text = ~paste("Year:", date, "<br>Region:", country, "<br>MMR:", maternal_mortality_ratio),
+              showlegend = FALSE)
+
+mmr_plotly
+
+```
+
+
+
+```{r, include=FALSE, echo=FALSE}
+average_mmr_years <- DATA %>%
+  filter(date %in% c(2000, 2015, 2016, 2020)) %>%
+  group_by(date) %>%
+  summarise(average_mmr = mean(maternal_mortality_ratio, na.rm = TRUE))
+
+
+print(average_mmr_years)
+
+# Calculate the average MMR for the period 2016 to 2020
+average_mmr_2016_2020 <- DATA %>%
+  filter(date >= 2016 & date <= 2020) %>%
+  summarise(average_mmr_2016_2020 = mean(maternal_mortality_ratio, na.rm = TRUE))
+
+print(average_mmr_2016_2020)
+
+percent_change <- function(start_value, end_value) {
+  ((end_value - start_value) / start_value) * 100
+}
+
+# Percentage change from 2000 to 2020
+percent_change_2000_2020 <- percent_change(
+  start_value = average_mmr_years$average_mmr[average_mmr_years$date == 2000],
+  end_value = average_mmr_years$average_mmr[average_mmr_years$date == 2020]
+)
+
+# Percentage change from 2016 to 2020
+percent_change_2016_2020 <- percent_change(
+  start_value = average_mmr_years$average_mmr[average_mmr_years$date == 2016],
+  end_value = average_mmr_years$average_mmr[average_mmr_years$date == 2020]
+)
+
+cat("Percentage Change from 2000 to 2020:", percent_change_2000_2020, "%\n")
+cat("Percentage Change from 2016 to 2020:", percent_change_2016_2020, "%\n")
+
+```
+
+
+```{r, include=FALSE, echo=FALSE}
+mmr_data_regions <- DATA %>%
+  filter(country %in% c("East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
+                        "Middle East & North Africa", "North America", "South Asia", 
+                        "Sub-Saharan Africa", "World"))
+
+colors <- setNames(c("black", "orange", "cyan", "gray", "purple", "red", "green", "darkblue"),
+                   c("World", "East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
+                     "Middle East & North Africa", "North America", "South Asia", "Sub-Saharan Africa"))
+
+mmr_plotly <- plot_ly() %>%
+  add_lines(data = mmr_data_regions, x = ~date, y = ~maternal_mortality_ratio,
+            color = ~country, colors = colors,
+            hoverinfo = 'text', text = ~paste("Year:", date, "<br>Region:", country, "<br>MMR:", maternal_mortality_ratio)) %>%
+  layout(title = "Maternal mortality ratio (per 100,000 live births) by region, 2000-2020",
+         xaxis = list(title = "Year"),
+         yaxis = list(title = "Maternal Mortality Ratio"),
+         hovermode = 'closest')
+
+mmr_plotly <- mmr_plotly %>%
+  add_markers(data = mmr_data_regions[mmr_data_regions$date %% 5 == 0, ],
+              x = ~date, y = ~maternal_mortality_ratio,
+              marker = list(size = 6, color = ~country, colors = colors),
+              hoverinfo = 'text', text = ~paste("Year:", date, "<br>Region:", country, "<br>MMR:", maternal_mortality_ratio),
+              showlegend = FALSE)
+
+mmr_plotly
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Filter data for the year 2020 and the specified regions
+regions_data_2020 <- DATA %>%
+  filter(date == 2020, country %in% c("East Asia & Pacific", "Europe & Central Asia", 
+                                      "Latin America & Caribbean", "Middle East & North Africa", 
+                                      "North America", "South Asia", "Sub-Saharan Africa")) %>%
+  group_by(country) %>%
+  summarize(sum_maternal_mortality = sum(maternal_mortality_ratio, na.rm = TRUE))
+
+# Print the results
+print(regions_data_2020)
+
+```
+
+
+
+
+
+```{r, include=FALSE, echo=FALSE}
+set.seed(216)
+
+DATA2 <- DATA %>%
+  filter(country %in% c("East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
+                        "Middle East & North Africa", "North America", "South Asia", 
+                        "Sub-Saharan Africa")) %>% 
+  crossv_kfold(k = 10)
+```
+
+
+
+```{r, include=FALSE, echo=FALSE}
+MAE.func <- function(actual, predict) {
+  mean(abs(actual - predict), na.rm = TRUE)
+}
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Model with interaction between life expectancy at birth and access to electricity
+train.model.func1 <- function(data, I, J) {
+  lm(maternal_mortality_ratio ~ poly(GDP_per_capita, I) + poly(date, J) + 
+      access_to_electricity * life_expectancy_at_birth, data = data)
+}
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+OUT.MAE1 <- matrix(NA, nrow = 9, ncol = 9)
+
+for (I in 1:9) {
+  for (J in 1:9) {
+    DATA3 <- DATA2 %>%
+      mutate(
+        tr.model = map(train, ~train.model.func1(.x, I, J)),
+        predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+      ) %>%
+      select(predict) %>%
+      unnest(cols = c(predict))
+    
+    OUT.MAE1[I, J] <- MAE.func(actual = DATA3$maternal_mortality_ratio, predict = DATA3$.fitted)
+  }
+}
+
+print(OUT.MAE1)
+```
+
+```{r, include=FALSE, echo=FALSE}
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Model with interaction between GDP per capita and access to electricity
+train.model.func2 <- function(data, I, J) {
+  lm(maternal_mortality_ratio ~ poly(GDP_per_capita, I) + poly(date, J) +
+     GDP_per_capita * access_to_electricity, data = data)
+}
+```
+
+```{r, include=FALSE, echo=FALSE}
+OUT.MAE2 <- matrix(NA, nrow = 9, ncol = 9)
+
+for (I in 1:9) {
+  for (J in 1:9) {
+    DATA3 <- DATA2 %>%
+      mutate(
+        tr.model = map(train, ~train.model.func2(.x, I, J)),
+        predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+      ) %>%
+      select(predict) %>%
+      unnest(cols = c(predict))
+    
+    OUT.MAE2[I, J] <- MAE.func(actual = DATA3$maternal_mortality_ratio, predict = DATA3$.fitted)
+  }
+}
+
+print(OUT.MAE2)
+```
+
+```{r, include=FALSE, echo=FALSE}
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Population Density and Access to Electricity with Interaction:
+train.model.func3 <- function(data, I, J) {
+  lm(maternal_mortality_ratio ~ poly(population_density, I) + poly(access_to_electricity, J) +
+     population_density * access_to_electricity, data = data)
+}
+```
+
+```{r, include=FALSE, echo=FALSE}
+OUT.MAE3 <- matrix(NA, nrow = 9, ncol = 9)
+
+for (I in 1:9) {
+  for (J in 1:9) {
+    DATA3 <- DATA2 %>%
+      mutate(
+        tr.model = map(train, ~train.model.func3(.x, I, J)),
+        predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+      ) %>%
+      select(predict) %>%
+      unnest(cols = c(predict))
+    
+    OUT.MAE3[I, J] <- MAE.func(actual = DATA3$maternal_mortality_ratio, predict = DATA3$.fitted)
+  }
+}
+
+print(OUT.MAE3)
+```
+```{r, include=FALSE, echo=FALSE}
+#This large drop in MAE, especially after degrees 5 for both variables, shows that in the regions being analyzed, population density and access to electricity are key variables affect MMR. Lower MAEs at higher degrees show that the interaction between these factors is complicated and not linear. This could mean that areas with more people benefit more from better access to electricity in terms of lowering MMR. This could be useful for making policy, focusing on improving infrastructure in places with high population density so that MMR can be lowered more effectively.
+```
+
+```{r, include=FALSE, echo=FALSE}
+top_3_MAEs <- function(mae_matrix) {
+  mae_vector <- as.vector(mae_matrix)
+  mae_df <- expand.grid(I = seq_len(nrow(mae_matrix)), J = seq_len(ncol(mae_matrix)))
+  
+  mae_df$MAE <- mae_vector
+  top_3 <- mae_df %>% 
+           arrange(MAE) %>% 
+           slice(1:3)
+  return(top_3)
+}
+
+top_mae1 <- top_3_MAEs(OUT.MAE1)
+top_mae2 <- top_3_MAEs(OUT.MAE2)
+top_mae3 <- top_3_MAEs(OUT.MAE3)
+
+combined_top_maes <- bind_rows(
+  top_mae1 %>% mutate(Model = "Model 1: Life Expectancy & Electricity Access"),
+  top_mae2 %>% mutate(Model = "Model 2: GDP & Electricity Access"),
+  top_mae3 %>% mutate(Model = "Model 3: Pop Density & Electricity Access")
+)
+
+# Display the results
+print(combined_top_maes)
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Using the identified best configurations from each model
+best_IJ_1 <- c(5, 2)
+best_IJ_2 <- c(6, 1)
+best_IJ_3 <- c(9, 6)
+
+# Re-running the models using the best configurations
+best_data_1 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func1(.x, best_IJ_1[1], best_IJ_1[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+best_data_2 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func2(.x, best_IJ_2[1], best_IJ_2[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+best_data_3 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func3(.x, best_IJ_3[1], best_IJ_3[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+# Plotting the results
+# Plotting the results with explicit legend mapping
+ggplot() +
+  geom_point(data = best_data_1, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 1: Life Expectancy & Electricity"), alpha = 0.6) +
+  geom_point(data = best_data_2, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 2: GDP & Electricity"), alpha = 0.6) +
+  geom_point(data = best_data_3, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 3: Pop Density & Electricity"), alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, linetype = "solid", color = "black") + # Add a 1:1 line for reference
+  labs(x = "Actual Maternal Mortality Ratio", y = "Predicted Maternal Mortality Ratio",
+       title = "Comparison of Model Predictions vs. Actual Data") +
+  theme_minimal() +
+  scale_color_manual(name = "Models", 
+                     values = c("Model 1: Life Expectancy & Electricity" = "red",
+                                "Model 2: GDP & Electricity" = "blue",
+                                "Model 3: Pop Density & Electricity" = "green")) +
+  theme(legend.position = "bottom") # Position the legend at the bottom
+
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+#Sub-sarharn Africa and South-East Asia
+set.seed(216)
+
+DATA2 <- DATA %>%
+  filter(country %in% c("South Asia", "Sub-Saharan Africa")) %>%  
+  crossv_kfold(k = 10)
+```
+
+
+```{r, include=FALSE, echo=FALSE}
+# Model with interaction between life expectancy at birth and access to electricity
+train.model.func1 <- function(data, I, J) {
+  lm(maternal_mortality_ratio ~ poly(GDP_per_capita, I) + poly(date, J) + 
+      access_to_electricity * life_expectancy_at_birth, data = data)
+}
+```
+
+```{r, include=FALSE, echo=FALSE}
+OUT.MAE1 <- matrix(NA, nrow = 9, ncol = 9)
+
+for (I in 1:9) {
+  for (J in 1:9) {
+    DATA3 <- DATA2 %>%
+      mutate(
+        tr.model = map(train, ~train.model.func1(.x, I, J)),
+        predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+      ) %>%
+      select(predict) %>%
+      unnest(cols = c(predict))
+    
+    OUT.MAE1[I, J] <- MAE.func(actual = DATA3$maternal_mortality_ratio, predict = DATA3$.fitted)
+  }
+}
+
+print(OUT.MAE1)
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Model with interaction between GDP per capita and access to electricity
+train.model.func2 <- function(data, I, J) {
+  lm(maternal_mortality_ratio ~ poly(GDP_per_capita, I) + poly(date, J) +
+     gov_health_exp * access_to_electricity, data = data)
+}
+```
+
+```{r, include=FALSE, echo=FALSE}
+OUT.MAE2 <- matrix(NA, nrow = 9, ncol = 9)
+
+for (I in 1:9) {
+  for (J in 1:9) {
+    DATA3 <- DATA2 %>%
+      mutate(
+        tr.model = map(train, ~train.model.func2(.x, I, J)),
+        predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+      ) %>%
+      select(predict) %>%
+      unnest(cols = c(predict))
+    
+    OUT.MAE2[I, J] <- MAE.func(actual = DATA3$maternal_mortality_ratio, predict = DATA3$.fitted)
+  }
+}
+
+print(OUT.MAE2)
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Population Density and Access to Electricity with Interaction:
+train.model.func3 <- function(data, I, J) {
+  lm(maternal_mortality_ratio ~ poly(population_density, I) + poly(access_to_electricity, J), data = data)
+}
+```
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+OUT.MAE3 <- matrix(NA, nrow = 9, ncol = 9)
+
+for (I in 1:9) {
+  for (J in 1:9) {
+    DATA3 <- DATA2 %>%
+      mutate(
+        tr.model = map(train, ~train.model.func3(.x, I, J)),
+        predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+      ) %>%
+      select(predict) %>%
+      unnest(cols = c(predict))
+    
+    OUT.MAE3[I, J] <- MAE.func(actual = DATA3$maternal_mortality_ratio, predict = DATA3$.fitted)
+  }
+}
+
+print(OUT.MAE3)
+```
+
+```{r, include=FALSE, echo=FALSE}
+top_3_MAEs <- function(mae_matrix) {
+  mae_vector <- as.vector(mae_matrix)
+  mae_df <- expand.grid(I = seq_len(nrow(mae_matrix)), J = seq_len(ncol(mae_matrix)))
+  
+  mae_df$MAE <- mae_vector
+  top_3 <- mae_df %>% 
+           arrange(MAE) %>% 
+           slice(1:3)
+  return(top_3)
+}
+
+top_mae1 <- top_3_MAEs(OUT.MAE1)
+top_mae2 <- top_3_MAEs(OUT.MAE2)
+top_mae3 <- top_3_MAEs(OUT.MAE3)
+
+combined_top_maes <- bind_rows(
+  top_mae1 %>% mutate(Model = "Model 1: Life Expectancy & Electricity Access"),
+  top_mae2 %>% mutate(Model = "Model 2: GDP & Electricity Access"),
+  top_mae3 %>% mutate(Model = "Model 3: Pop Density & Electricity Access")
+)
+
+# Display the results
+print(combined_top_maes)
+```
+
+```{r, include=FALSE, echo=FALSE}
+best_IJ_1 <- c(6, 5)
+best_IJ_2 <- c(1, 2)
+best_IJ_3 <- c(9, 7)
+
+best_data_1 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func1(.x, best_IJ_1[1], best_IJ_1[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+best_data_2 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func2(.x, best_IJ_2[1], best_IJ_2[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+best_data_3 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func3(.x, best_IJ_3[1], best_IJ_3[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+ggplot() +
+  geom_point(data = best_data_1, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 1: Life Expectancy & Electricity"), alpha = 0.6) +
+  geom_point(data = best_data_2, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 2: GDP & Electricity"), alpha = 0.6) +
+  geom_point(data = best_data_3, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 3: Pop Density & Electricity"), alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, linetype = "solid", color = "black") + # Add a 1:1 line for reference
+  labs(x = "Actual Maternal Mortality Ratio", y = "Predicted Maternal Mortality Ratio",
+       title = "Comparison of Model Predictions vs. Actual Data") +
+  theme_minimal() +
+  scale_color_manual(name = "Models", 
+                     values = c("Model 1: Life Expectancy & Electricity" = "red",
+                                "Model 2: GDP & Electricity" = "blue",
+                                "Model 3: Pop Density & Electricity" = "green")) +
+  theme(legend.position = "bottom") # Position the legend at the bottom
+```
+
+
+
+```{r, include=FALSE, echo=FALSE}
+set.seed(216)
+
+trainModelFunc3 <- function(data, I, J) {
+  lm(maternal_mortality_ratio ~ poly(population_density, I) + poly(access_to_electricity, J), data = data)
+}
+
+num_folds_to_use <- 10
+
+all_std_res <- numeric()
+
+for (i in 1:num_folds_to_use) {
+  if (nrow(DATA2$train[[i]]) > 0) {
+    fitted_model <- trainModelFunc3(DATA2$train[[i]], 4, 5)
+
+    residuals <- residuals(fitted_model)
+    std_res <- scale(residuals)
+
+    all_std_res <- c(all_std_res, std_res)
+  } else {
+    cat(sprintf("No data available in fold %d for model fitting.\n", i))
+  }
+}
+
+if (length(all_std_res) > 0) {
+  qqnorm(all_std_res, main = "Normal Q-Q Plot", ylab = "Standardized Residuals", xlab = "Theoretical Quantiles", pch = 1, frame = FALSE)
+  qqline(all_std_res, col = "steelblue", lwd = 2)
+} else {
+  print("No valid residuals were generated across any selected folds.")
+}
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+
+```
+
+
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+library(tsibble)
+```
+
+
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+DATA_ts <- DATA %>% filter(country %in% c("East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean", "Middle East & North Africa", "North America", "South Asia", "Sub-Saharan Africa")) %>% 
+  as_tsibble(index = date, key = country)
+glimpse(DATA_ts)
+
+```
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+library(fable)
+library(fabletools)
+library(forecast)
+library(feasts)
+```
+
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+fit <- DATA_ts %>%
+  model(arima = ARIMA(maternal_mortality_ratio ~ pdq(0,1,1) + PDQ(0,1,1)))
+
+# Forecasting for the next 10 years (2021-2030)
+forecasts <- fit %>%
+  forecast(h = "10 years")
+
+plot_forecasts <- forecasts %>%
+  autoplot(DATA_ts) +
+  labs(title = "Maternal Mortality Ratio (deaths per 100,000 live births) 2021-2030",
+       x = "Year", y = "CO2 Emissions") +
+  theme_minimal() +
+  facet_wrap(~ country, scales = "free_y") + 
+  theme(plot.margin = unit(c(1, 1, 1, 1), "lines"),
+        aspect.ratio = 1.5)
+
+plotly_forecasts <- ggplotly(plot_forecasts)
+
+plotly_forecasts
+```
+
+
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+fit2 <- DATA_ts %>%
+  model(arima = ARIMA(CO2_emisions ~ pdq(0,1,1) + PDQ(0,1,1)))
+
+# Forecasting for the next 10 years (2021-2050)
+forecasts2 <- fit2 %>%
+  forecast(h = "30 years")
+
+plot_forecasts2 <- forecasts2 %>%
+  autoplot(DATA_ts) +
+  labs(title = "CO2 Emissions Measured in Kiloton (kt) for 2021-2050",
+       x = "Year", y = "CO2 Emissions") +
+  theme_minimal() +
+  facet_wrap(~ country, scales = "free_y") + 
+  theme(plot.margin = unit(c(1, 1, 1, 1), "lines"),
+        aspect.ratio = 1.5)
+
+plotly_forecasts2 <- ggplotly(plot_forecasts2)
+
+plotly_forecasts2
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Get CO2 emissions data for 2010
+CO2_2010 <- DATA_ts %>%
+  filter(date == 2010) %>%
+  pull(CO2_emisions)
+
+# Get forecasted CO2 emissions data for 2030
+CO2_2030 <- forecasts2 %>%
+  filter(date == 2030) %>%
+  pull(.mean)
+
+percent_change_CO2 <- (CO2_2030 - CO2_2010) / CO2_2010 * 100
+
+results <- data.frame(
+  Country = unique(DATA_ts$country),
+  Percent_Change = percent_change_CO2
+)
+
+mean_percent_change <- mean(percent_change_CO2, na.rm = TRUE)
+
+print(results)
+
+print(paste("Total Mean Percentage Change: ", mean_percent_change, "%", sep=""))
+
+
+# Positive percentage is an increase, negative percentage is a decrease in CO2 emissions in by 2030. By 2030, world emissions will be up 21.69%, so at this rate we will not reach our net 0 goal.
+```
+
+```{r, include=FALSE, echo=FALSE}
+forecast_tibble <- forecasts %>%
+  as_tibble()
+
+forecast_tibble %>%
+  arrange(country, date) %>%
+  select(country, date, .mean)  # You can also add .lower and .upper if you have these columns and need them
+
+
+forecast_tibble2 <- forecasts2 %>%
+  as_tibble()
+
+forecast_tibble2 %>%
+  arrange(country, date) %>%
+  select(country, date, .mean)
+```
+
+
+```{r, include=FALSE}
+#EVERYTHING ABOVE THIS POINT SHOULD BE SET TO INCLUDE=#FALSE
+```
+
+
+
+# INTRODUCTION
+
+The [United Nations Development Program’s 17 Sustainable Development Goals](https://www.undp.org/sustainable-development-goals)
+(SDG’s) provide a structured framework on how developed countries can end poverty, protect the planet, and ensure that by 2030 all people enjoy peace and prosperity. This consists of ventures at home such as reducing carbon emissions (SDG 13), as well as those more focused towards developing nations such as ensuring everyone has access to clean water and sanitation (SDG 6). It is important to note that many of the Sustainable Development Goals have implications in developed countries, as we see poverty (SDG 1) and inequalities (SDG 10) within the United States, but that these often pale in comparison to the struggles seen in the developing world. The purpose of this paper is to take an analytic dive into SDG 3: Good Health and Well-Being, and SDG 13: Climate Action.  We will examine how “on track” countries are towards meeting quantitative SDG goals and use modeling techniques to predict when geographical regions will meet these goals given recent trends.
+
+One of the leading tenants of SDG 3 is that no country should have a maternal mortality ratio (MMR) over 70 deaths per 100,000 live births. As of 2020 the United States was at 21 maternal deaths per live births, while many countries in Central Africa have a MMR between the 500 to 800 range. Generally speaking, access to healthcare, especially for women, is a key indicator of how developed a country is. Many maternal deaths in lesser developed regions and continents are preventable by procedures and methods that can be found in more developed areas of the globe. Maternal death impacts those in underdeveloped regions in different ways than we think of in the developed world. Harvard Universities FXB Center For Health and Human Rights found [four key long term effects of maternal mortality](https://fxb.harvard.edu/2015/05/07/economic-and-social-impacts-of-maternal-death/#:~:text=The%20loss%20of%20that%20income,more%20likely%20to%20leave%20school.). Death of the mother increases financial instability as they are often times working manual labor to attain bare necessities such as food and water. Additionally, they found that children whose mother had died were more likely to die themselves, leave school at an earlier age, or cause more problems for their older siblings and fathers as they take on the responsibilities a mother would have fulfilled. Keeping this in mind, we decided to ask the question: Are we on track to lower the global MMR to below 70 maternal deaths per 100,000 live births? 
+
+SDG 13 addresses Climate Action, or the global approach to reducing carbon emissions, improving climate resiliency in the most affected places, and implementing climate change measures into policy and regulations. This goal acknowledges the urgent need for countries to take action in mitigating the harmful effects of climate change on their most vulnerable people. Global warming has direct relations to the severe economic losses and climate-related disasters experienced by billions of people worldwide. The global initiative to limit global warming temperatures to 1.5 ºC through mitigating the impacts of carbon emissions has proven to be urgent. As the [National Aeuronautics and Space Administration](https://climate.nasa.gov/vital-signs/sea-level/?intent=121) has found, sea levels have risen 103 millimeters since 1993, and may only get worse as countires in the African and Southern Asian continents continue to develop. It is important to consider the trajectory of carbon emissions since 2000, and whether or not we are on track to reach this goal by 2030 in order to match the UN’s expectations. [The UN claims](https://unfccc.int/news/climate-plans-remain-insufficient-more-ambitious-action-needed-now) CO2 emissions must drop by 45% in the period between 2010 and 2030 in order to reach the net zero goals in 2050. The second question we will explore is whether or not global emissions are on track to accomplish this 45% decrease by 2030.
+
+# DATA
+
+In order to analyze and explore these two questions, we researched datasets which would provide us with relevant information. The dataset we selected was derived from kaggle.com, however the initial source is the World Bank database. This dataset includes information about the social, political, and economic data from over 268 countries and regions between the years 1960 and 2022. We also imported mortality ratio straight from world bank. In the combined dataset, there are over fifty columns, and we knew it would be best to choose a few variables that correlated most with each other in relation to our two questions. To find these variables we ran a correlation matrix, which we will later discuss. The variables we are using to answer our first question are `Maternal Mortality Ratio`, maternal mortality rate calculated as number of maternal deaths during live births per 100,000 live births , `Access to Electricity %`, the percentage of a population that has access to electricity, `Population Density`, measured in people per km^2 of land area, `GDP Per Capita`, measured as a countries total GDP production divided by its population and `Life Expectancy`, calculated by using a probability table that predicts the chance of a person dying by their next birthday. The variables we are using to answer our second question are `Renewable Energy Consumption`, the renewable energy consumption as a percentage of total final energy consumption, `Other Greenhouse Emissions`, the total greenhouse gas emissions measured in kt of CO2 equivalent, `GDP Current US`, a countries total Gross Domestic Product in USD, `Rule of Law Estimate`, calculated by [more than 30 think tanks](https://www.worldbank.org/en/publication/worldwide-governance-indicators) using a Qualified Respondents Questionnaire, `Population`, the number of people in the given country, `Voice and Accountability Estimate`, calculated by the same think tanks as that of the Rule of Law Estimate, and `GDP Per Capita`.
+
+```{r, results='asis', echo=FALSE, include=TRUE, fig.align='center'}
+OV <- DATA %>%
+  select(1:23)
+data_2020 <- OV[OV$date == 2020, ]
+datatable(data_2020, extensions = 'Buttons', options = list(
+    scrollX = TRUE,
+    dom = 'Bfrtip',
+    buttons = list(
+      'colvis',  
+      list(
+        extend = "collection",
+        text = 'Export',
+        buttons = c('csv', 'excel', 'pdf')
+      )
+    ),
+    pageLength = 10
+  ),
+  caption = 'Data for the Year 2020'
+)
+```
+
+Considering the initial dataset, we recognized a missing data problem. In order to narrow our data down to the most functional variables, we identified the variables where the missing data was most concentrated and unable to be imputed. Therefore, we reduced the dataset from around 53 variables to 23 variables. We used imputation through classification and regression trees (CART method) to impute variables that had [10% or less missing values](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8426774/pdf/IJPH-50-1372.pdf) in non-consecutive years per country. We also decided to remove 10 countries with excessive NA’s as they accounted for less than 1% of world GDP. This is prudent as it enhances data integrity by eliminating potential biases and inaccuracies introduced by including incomplete or unreliable data in the analysis. This ensures that the remaining dataset is more reliable, clean, and representative of the global landscape. It also allows for a more efficient allocation of resources by focusing our analysis on countries with a significant economic impact. 
+
+After achieving this tidied dataset, we created a correlation matrix to identify potential relationships that we could further discuss. We created a heatmap ranging from blue to red to represent the negative to positive correlations. By visualizing the correlation matrix as a heatmap we can interpret the associations of variables moving in the same or opposite directions and at their respective relationship. This matrix can be seen below.
+
+```{r, warning = F, echo=FALSE, include=TRUE, fig.align='center', fig.width=9, fig.height=7}
+numeric_data <- OV %>%
+  select_if(is.numeric)
+
+correlations <- cor(numeric_data, use = "pairwise.complete.obs")
+
+diag(correlations) <- NA
+
+p <- plot_ly(x = colnames(correlations), y = colnames(correlations), z = correlations, 
+             type = "heatmap", colors = colorRamp(c("blue", "white", "red")),
+             colorbar = list(title = "Correlation")) %>%
+      layout(title = "Correlation Matrix",
+             xaxis = list(tickangle = 45, tickfont = list(size = 10)),
+             yaxis = list(tickangle = 0, tickfont = list(size = 10)),
+             margin = list(l = 160, r = 10, b = 150, t = 80))
+p
+```
+
+# RESULTS
+# QUESTION 1
+
+Our first step in addressing SDG 3 was to gain a basic understanding of how the maternal mortality ratio has changed over time in each country individually, as well as observing trends in general geographical regions. We created an interactive heat-map of the globe using a yellow to red color gradient to distinguish between low and high maternal mortality ratios respectively. The graph shows data from the years 2000 to 2020, which can be adjusted using the slider. Pressing the `Play` button cycles through all years, and hovering over any country reveals its specific MMR value for that given year. With this data, we observed gradual improvements over the 20-year span for Sub-Saharan Africa and South Asia, but noted that their values still fall significantly higher than those of the rest of the world. This visualization helped us identify the regions most in need of attention, which could be the largest contributors to lowering global MMR. Additionally, we decided to make a more quantitative visualization by grouping the countries into their respective geographical regions and creating a line plot that demonstrates how these regions' MMR's have changed over time. This enabled us to have concrete trends for each region, and select specific groupings of countries to further model. Both the heatmap and the line graph can be found below.
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, fig.align='center', fig.width=9, fig.height=7}
+mortality_ratio_range <- range(world_data_heatmap$maternal_mortality_ratio, na.rm = TRUE)
+world_data_df <- st_set_geometry(world_data_heatmap, NULL)
+p_interactive <- plot_geo(data = world_data_df, locations = ~iso_a3_eh, color = ~maternal_mortality_ratio,
+                          frame = ~date, text = ~paste("ISO Code:", iso_a3_eh, "<br>Maternal Mortality Ratio:", maternal_mortality_ratio),
+                          locationmode = 'ISO-3') %>%
+  add_trace(
+    type = 'choropleth',
+    z = ~maternal_mortality_ratio,
+    colorscale = list(c(0, "yellow"), c(1, "red")),
+    autocolorscale = FALSE,
+    zmin = mortality_ratio_range[1], 
+    zmax = mortality_ratio_range[2], 
+    marker = list(line = list(color = 'rgb(180,180,180)', width = 0.5))
+  ) %>%
+  colorbar(title = "Maternal Mortality Ratio") %>%
+  animation_opts(frame = 100, redraw = TRUE) %>%
+  layout(title = "World Maternal Mortality Ratio Heatmap",
+         geo = list(
+           projection = list(type = 'natural earth'),
+           showland = TRUE,
+           landcolor = 'gray'
+         ),
+         sliders = list(
+           list(
+             currentvalue = list(prefix = "Year: "),
+             steps = lapply(sort(unique(world_data_df$date)), function(year) {
+               list(method = "animate", args = list(list("frame", list(duration = 500, redraw = TRUE)), list(mode = "immediate")),
+                    label = as.character(year))
+             })
+           )
+         )
+        )
+p_interactive
+
+```
+```{r, echo=FALSE, include=TRUE, fig.width=9, fig.height=7, fig.align='center'}
+mmr_data_regions <- DATA %>%
+  filter(country %in% c("East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
+                        "Middle East & North Africa", "North America", "South Asia", 
+                        "Sub-Saharan Africa", "World"))
+
+colors <- setNames(c("black", "orange", "cyan", "gray", "purple", "red", "green", "darkblue"),
+                   c("World", "East Asia & Pacific", "Europe & Central Asia", "Latin America & Caribbean",
+                     "Middle East & North Africa", "North America", "South Asia", "Sub-Saharan Africa"))
+
+mmr_plotly <- plot_ly() %>%
+  add_lines(data = mmr_data_regions, x = ~date, y = ~maternal_mortality_ratio,
+            color = ~country, colors = colors,
+            hoverinfo = 'text', text = ~paste("Year:", date, "<br>Region:", country, "<br>MMR:", maternal_mortality_ratio)) %>%
+  layout(title = "Maternal mortality ratio (per 100,000 live births) by region, 2000-2020",
+         xaxis = list(title = "Year"),
+         yaxis = list(title = "Maternal Mortality Ratio"),
+         hovermode = 'closest')
+
+mmr_plotly <- mmr_plotly %>%
+  add_markers(data = mmr_data_regions[mmr_data_regions$date %% 5 == 0, ],
+              x = ~date, y = ~maternal_mortality_ratio,
+              marker = list(size = 6, color = ~country, colors = colors),
+              hoverinfo = 'text', text = ~paste("Year:", date, "<br>Region:", country, "<br>MMR:", maternal_mortality_ratio),
+              showlegend = FALSE)
+
+mmr_plotly
+```
+
+An in-depth look at regional data shows significant disparities in MMR. Sub-Saharan Africa, despite considerable progress, still has the highest rates of MMR. The rate of decline in MMR here and in South Asia suggests positive trends. However, neither region is on track to meet the SDG 3 target of 70 deaths per 100,000 live births by 2030 without significant changes. In contrast, regions like Europe & Central Asia and North America have maintained low MMRs with minimal fluctuations, which demonstrates their effective healthcare management systems.
+
+Next, we made several models to look at what influences MMR. The first model explored interactions between life expectancy and access to electricity, showing us that better healthcare infrastructure correlates with lower MMRs. Our second model looked at GDP per capita and access to electricity, demonstrating the benefits of economic health alongside infrastructure improvements. Lastly, the third model used population density and access to electricity as interaction terms, which helps us understand MMR implications in densely populated areas. Each model employed k-fold cross-validation, and their predictive accuracies can be seen in the plot below.
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, fig.align='center', fig.width=9, fig.height=7}
+best_IJ_1 <- c(6, 5)
+best_IJ_2 <- c(1, 2)
+best_IJ_3 <- c(9, 7)
+
+best_data_1 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func1(.x, best_IJ_1[1], best_IJ_1[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+best_data_2 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func2(.x, best_IJ_2[1], best_IJ_2[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+best_data_3 <- DATA2 %>%
+  mutate(
+    tr.model = map(train, ~train.model.func3(.x, best_IJ_3[1], best_IJ_3[2])),
+    predict = map2(test, tr.model, ~augment(.y, newdata = .x))
+  ) %>%
+  select(predict) %>%
+  unnest(cols = c(predict))
+
+ggplot() +
+  geom_point(data = best_data_1, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 1: Life Expectancy & Electricity"), alpha = 0.6) +
+  geom_point(data = best_data_2, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 2: GDP & Electricity"), alpha = 0.6) +
+  geom_point(data = best_data_3, aes(x = maternal_mortality_ratio, y = .fitted, color = "Model 3: Pop Density & Electricity"), alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, linetype = "solid", color = "black") + 
+  labs(x = "Actual Maternal Mortality Ratio", y = "Predicted Maternal Mortality Ratio",
+       title = "Comparison of Model Predictions vs. Actual Data") +
+  theme_minimal() +
+  scale_color_manual(name = "Models", 
+                     values = c("Model 1: Life Expectancy & Electricity" = "red",
+                                "Model 2: GDP & Electricity" = "blue",
+                                "Model 3: Pop Density & Electricity" = "green")) +
+  theme(legend.position = "bottom") 
+```
+
+Additionally, we created a plot of residuals using Quantile-Quantile (QQ) plots, which shows a generally good fit to the normal distribution with slight deviations.
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, fig.align='center', fig.width=9, fig.height=7}
+set.seed(216)
+
+trainModelFunc3 <- function(data, I, J) {
+  lm(maternal_mortality_ratio ~ poly(population_density, I) + poly(access_to_electricity, J), data = data)
+}
+
+num_folds_to_use <- 10
+
+all_std_res <- numeric()
+
+for (i in 1:num_folds_to_use) {
+  if (nrow(DATA2$train[[i]]) > 0) {
+    fitted_model <- trainModelFunc3(DATA2$train[[i]], 4, 5)
+
+    residuals <- residuals(fitted_model)
+    std_res <- scale(residuals)
+
+    all_std_res <- c(all_std_res, std_res)
+  } else {
+    cat(sprintf("No data available in fold %d for model fitting.\n", i))
+  }
+}
+
+if (length(all_std_res) > 0) {
+  qqnorm(all_std_res, main = "Normal Q-Q Plot", ylab = "Standardized Residuals", xlab = "Theoretical Quantiles", pch = 1, frame = FALSE)
+  qqline(all_std_res, col = "steelblue", lwd = 2)
+} else {
+  print("No valid residuals were generated across any selected folds.")
+}
+
+```
+
+Finally, we also utilized ARIMA time series forecasting to project MMR from 2021 to 2030 across our regions. This forecast aimed to evaluate whether current trends are likely to meet the SDG 3 target of 70 deaths per 100,000 live births by 2030. The results indicate varying degrees of expected MMR decline, with projections showing that Sub-Saharan Africa and Latin America & Caribbean might not reach the target under current conditions.
+
+``````{r, include=TRUE, echo=FALSE, warning=FALSE, fig.align='center', fig.width=9, fig.height=7}
+fit <- DATA_ts %>%
+  model(arima = ARIMA(maternal_mortality_ratio ~ pdq(0,1,1) + PDQ(0,1,1)))
+
+forecasts <- fit %>%
+  forecast(h = "10 years")
+
+plot_forecasts <- forecasts %>%
+  autoplot(DATA_ts) +
+  labs(title = "Maternal Mortality Ratio (deaths per 100,000 live births) 2021-2030",
+       x = "Year", y = "CO2 Emissions") +
+  theme_minimal() +
+  facet_wrap(~ country, scales = "free_y") + 
+  theme(plot.margin = unit(c(1, 1, 1, 1), "lines"),
+        aspect.ratio = 1.5)
+
+plotly_forecasts <- ggplotly(plot_forecasts)
+
+plotly_forecasts
+```
+
+
+# QUESTION 2
+
+To begin analyzing the trends of CO2 emission and gaining insight on SDG 13 we created an interactive graph showcasing the average emissions from our data. The visualization covers the period from 2000 to 2020 which you can find the specific amount of emissions if you hover over each year. Upon analyzing the plot we can observe a consistent rise in CO2 emissions until 2018, followed by a gradual decline leading up to 2020.
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, fig.align='center', fig.width=9, fig.height=7}
+mean_CO2_by_date <- DATA %>%
+  group_by(date) %>%
+  summarise(mean_CO2 = mean(CO2_emisions, na.rm = TRUE))
+
+library(plotly)
+
+plot_ly(mean_CO2_by_date, x = ~date, y = ~mean_CO2, type = 'scatter', mode = 'lines') %>%
+  layout(title = 'World Avg CO2 Emissions Over Time',
+         xaxis = list(title = 'Year'),
+         yaxis = list(title = 'Mean CO2 Emissions'))
+
+```
+
+Since we want to measure the overall health of all regions, we first aggregate the data to find the average CO2 emissions per date. To analyze and forecast emissions for 2010 and 2030 we extracted the CO2 emission data and then extracted the forecasted CO2 emissions data for the year 2030 from our forecast2 data set. We utilized ARIMA time series forecasting to project CO2_emissions from 2021 to 2030 across our regions. We find that Europe & Central Asia, North America, and Latin America & Caribbean all have downward trends but are predicted to slow down as the years continue. 
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, fig.align='center', fig.width=9, fig.height=7}
+library(scales)  
+
+fit2 <- DATA_ts %>%
+  model(arima = ARIMA(CO2_emisions ~ pdq(0,1,1) + PDQ(0,1,1)))
+
+
+forecasts2 <- fit2 %>%
+  forecast(h = "10 years")
+
+plot_forecasts2 <- forecasts2 %>%
+  autoplot(DATA_ts) +
+  labs(title = "CO2 Emissions Measured in Kiloton (kt) for 2021-2030",
+       x = "Year", y = "CO2 Emissions") +
+  theme_minimal() +
+  facet_wrap(~ country, scales = "free_y") + 
+  theme(plot.margin = unit(c(1, 1, 1, 1), "lines"),
+        aspect.ratio = 1.5) +
+  scale_y_continuous(labels = scales::comma) 
+
+plotly_forecasts2 <- ggplotly(plot_forecasts2)
+
+plotly_forecasts2
+```
+
+
+This forecast aimed to evaluate whether current trends are likely to meet the SDG target of having a decrease of 45% in CO2 emission levels by 2030. We calculated the percentage change from these two and calculated the mean percentage change. From this we found that there is a projected increase in CO2 emissions by 21.69%. To visually understand this, we fit a model to predict CO2 emissions and use the forecast to project emissions for the year 2030. In our graph we added a 80% and 95% confidence level which allows us to consider the margin of error. Through the graph we can also see that there is a projected increase in CO2 emissions from 2020 to 2030. 
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE, fig.align='center', fig.width=9, fig.height=7}
+
+average_CO2_by_date <- DATA_ts %>%
+  index_by(date) %>%
+  summarise(Average_CO2 = mean(CO2_emisions, na.rm = TRUE))
+
+
+
+fit <- average_CO2_by_date %>%
+  model(arima = ARIMA(Average_CO2 ~ pdq(0,1,1) + PDQ(0,1,1)))
+forecast_2030 <- fit %>%
+  forecast(h = 2030 - max(average_CO2_by_date$date))
+plot_forecast_2030 <- forecast_2030 %>%
+  autoplot() +
+  labs(title = "Forecasted CO2 Emissions for 2030",
+       x = "Year", y = "CO2 Emissions") +
+  theme_minimal()
+
+
+print(plot_forecast_2030)
+
+```
+
+# CONCLUSION
+
+In our analysis, we attempted to answer if we are on track to meet the UN SDG 3, Good Health and Well-being, which includes achieving a maternal mortality rate of 70 maternal deaths per every 100,000 live births. Next, we also tried to answer whether global emissions are on track to decrease by 45% by 2030 in accordance with the UN SDG 13, Climate Action. The findings of our analysis are mixed; while the MMRs in regions with historically high rates are lowering, SDG 3’s goal is unlikely to be realized by 2030. On the environmental side of things with SDG 13, our models suggest an increase of over 21% in CO2 emissions by 2030, which is concerning and reflects the large shortfall in current global environmental policy.
+
+While our use of ARIMA and linear regression models provided great insights for our analysis, they have their shortcomings, especially considering the nature of our dataset and economic data in general. Such linear models oversimplify relationships and have a harder time catching sudden shifts or irregular patterns in the data, which can be caused by public health emergencies and abrupt policy changes, among other things. Our models could definitely benefit from including more advanced non-linear and machine learning methods that can address these weaknesses, which can lead to more effective forecasting and precise policy recommendations.
+
+We consider it to be incredibly important for the answers to our questions to be known because they transcend verbally stating goals and instead put out a call to action. The UNDP’s mandate calls to end poverty, build democratic governance, rule of law, and inclusive institutions. It is imperative that the data and progress is made transparent and updated for the global public. Using predictive models can allow for global political leaders to adjust their policies and practices for both reducing carbon emissions and maternal mortality rates. Policies such as increased carbon taxes, expenditure for development in low-carbon technologies, and performance standards can result in reduced carbon emissions in multiple sectors. Healthcare infrastructure and access development and investment in sexual education are strategies that can help reduce maternal mortality rates. Our research serves as a call to invest and implement policies such as these in order to properly and effectively meet these sustainable development goals. 
+
+
+

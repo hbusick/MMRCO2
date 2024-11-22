@@ -1,0 +1,267 @@
+﻿country,Indicator Name,2021,2022
+Aruba,political_stability_estimate,1.431547046,1.474684358
+Africa Eastern and Southern,political_stability_estimate,,
+Afghanistan,political_stability_estimate,-2.518530369,-2.550801754
+Africa Western and Central,political_stability_estimate,,
+Angola,political_stability_estimate,-0.709369481,-0.64624089
+Albania,political_stability_estimate,0.196294025,0.114945494
+Andorra,political_stability_estimate,1.581067443,1.587736487
+Arab World,political_stability_estimate,,
+United Arab Emirates,political_stability_estimate,0.597461224,0.700785339
+Argentina,political_stability_estimate,0.000468279,-0.009163282
+Armenia,political_stability_estimate,-0.804036558,-0.797183931
+American Samoa,political_stability_estimate,1.068576336,1.128859043
+Antigua and Barbuda,political_stability_estimate,0.949530005,0.943862259
+Australia,political_stability_estimate,0.835315883,0.933572054
+Austria,political_stability_estimate,0.899418652,0.637995362
+Azerbaijan,political_stability_estimate,-0.837816358,-0.931885719
+Burundi,political_stability_estimate,-1.258357525,-1.188869476
+Belgium,political_stability_estimate,0.662566304,0.575668812
+Benin,political_stability_estimate,-0.396347791,-0.349461377
+Burkina Faso,political_stability_estimate,-1.642869711,-1.782517433
+Bangladesh,political_stability_estimate,-1.036632776,-1.092371106
+Bulgaria,political_stability_estimate,0.364647597,0.24625206
+Bahrain,political_stability_estimate,-0.524779737,-0.407028496
+"Bahamas, The",political_stability_estimate,0.850836754,0.883432567
+Bosnia and Herzegovina,political_stability_estimate,-0.421767116,-0.43937102
+Belarus,political_stability_estimate,-0.754245222,-0.793873549
+Belize,political_stability_estimate,0.272381902,0.426349759
+Bermuda,political_stability_estimate,1.002396107,1.034533978
+Bolivia,political_stability_estimate,-0.278813034,-0.283260942
+Brazil,political_stability_estimate,-0.41969654,-0.3314659
+Barbados,political_stability_estimate,1.118416667,1.15202713
+Brunei Darussalam,political_stability_estimate,1.171651721,1.257367969
+Bhutan,political_stability_estimate,0.797127724,0.864817739
+Botswana,political_stability_estimate,1.041259646,1.077516079
+Central African Republic,political_stability_estimate,-2.12673974,-2.162472963
+Canada,political_stability_estimate,0.962195992,0.772814035
+Central Europe and the Baltics,political_stability_estimate,,
+Switzerland,political_stability_estimate,1.115222096,1.161139727
+Channel Islands,political_stability_estimate,,
+Chile,political_stability_estimate,0.161352158,0.118578859
+China,political_stability_estimate,-0.516728878,-0.441073626
+Cote d'Ivoire,political_stability_estimate,-0.715018511,-0.516378641
+Cameroon,political_stability_estimate,-1.394035697,-1.352949023
+"Congo, Dem. Rep.",political_stability_estimate,-1.657812476,-1.977746248
+"Congo, Rep.",political_stability_estimate,-0.229479313,-0.016906014
+Colombia,political_stability_estimate,-0.954557538,-0.641925931
+Comoros,political_stability_estimate,-0.228033617,-0.230514869
+Cabo Verde,political_stability_estimate,0.894233108,0.929428399
+Costa Rica,political_stability_estimate,0.860289991,0.954446793
+Caribbean small states,political_stability_estimate,,
+Cuba,political_stability_estimate,0.392701924,0.499521583
+Curacao,political_stability_estimate,,
+Cayman Islands,political_stability_estimate,1.624580383,1.649437666
+Cyprus,political_stability_estimate,0.422054201,0.41863507
+Czechia,political_stability_estimate,0.947398126,0.81544137
+Germany,political_stability_estimate,0.725666702,0.614759147
+Djibouti,political_stability_estimate,-0.56633985,-0.508419454
+Dominica,political_stability_estimate,1.333959103,1.298232317
+Denmark,political_stability_estimate,0.928524494,0.865008831
+Dominican Republic,political_stability_estimate,0.287300646,0.328113049
+Algeria,political_stability_estimate,-0.992437243,-0.741771519
+East Asia & Pacific (excluding high income),political_stability_estimate,,
+Early-demographic dividend,political_stability_estimate,,
+East Asia & Pacific,political_stability_estimate,,
+Europe & Central Asia (excluding high income),political_stability_estimate,,
+Europe & Central Asia,political_stability_estimate,,
+Ecuador,political_stability_estimate,-0.257427931,-0.239295244
+"Egypt, Arab Rep.",political_stability_estimate,-1.032840967,-1.028056622
+Euro area,political_stability_estimate,,
+Eritrea,political_stability_estimate,-1.055657029,-0.970292985
+Spain,political_stability_estimate,0.509131908,0.265326977
+Estonia,political_stability_estimate,0.748466134,0.723720729
+Ethiopia,political_stability_estimate,-2.183713198,-2.038067579
+European Union,political_stability_estimate,,
+Fragile and conflict affected situations,political_stability_estimate,,
+Finland,political_stability_estimate,0.963134944,0.891491711
+Fiji,political_stability_estimate,0.724108815,0.764339507
+France,political_stability_estimate,0.325523823,0.334524125
+Faroe Islands,political_stability_estimate,,
+"Micronesia, Fed. Sts.",political_stability_estimate,1.202114701,1.210484147
+Gabon,political_stability_estimate,-0.075772829,0.069895133
+United Kingdom,political_stability_estimate,0.489892125,0.503939092
+Georgia,political_stability_estimate,-0.429646611,-0.4409495
+Ghana,political_stability_estimate,0.065785304,-0.065912969
+Gibraltar,political_stability_estimate,,
+Guinea,political_stability_estimate,-0.939894259,-0.864391387
+"Gambia, The",political_stability_estimate,0.035266154,0.04582857
+Guinea-Bissau,political_stability_estimate,-0.280024618,-0.394830406
+Equatorial Guinea,political_stability_estimate,-0.20278056,-0.074253544
+Greece,political_stability_estimate,0.101313189,0.064303063
+Grenada,political_stability_estimate,1.040163636,1.043798447
+Greenland,political_stability_estimate,1.877370477,1.565969229
+Guatemala,political_stability_estimate,-0.395547092,-0.304971337
+Guam,political_stability_estimate,0.877565145,0.808528244
+Guyana,political_stability_estimate,-0.137163654,0.027062163
+High income,political_stability_estimate,,
+"Hong Kong SAR, China",political_stability_estimate,0.263209611,0.61155504
+Honduras,political_stability_estimate,-0.627824068,-0.552035332
+Heavily indebted poor countries (HIPC),political_stability_estimate,,
+Croatia,political_stability_estimate,0.62148279,0.612161279
+Haiti,political_stability_estimate,-1.128099442,-1.406295657
+Hungary,political_stability_estimate,0.798463762,0.635951281
+IBRD only,political_stability_estimate,,
+IDA & IBRD total,political_stability_estimate,,
+IDA total,political_stability_estimate,,
+IDA blend,political_stability_estimate,,
+Indonesia,political_stability_estimate,-0.531467199,-0.439423859
+IDA only,political_stability_estimate,,
+Isle of Man,political_stability_estimate,,
+India,political_stability_estimate,-0.691997945,-0.568608165
+Not classified,political_stability_estimate,,
+Ireland,political_stability_estimate,0.84353143,0.881889522
+"Iran, Islamic Rep.",political_stability_estimate,-1.584384561,-1.586439133
+Iraq,political_stability_estimate,-2.384559393,-2.473924637
+Iceland,political_stability_estimate,1.372178674,1.262935281
+Israel,political_stability_estimate,-1.122282505,-1.28531599
+Italy,political_stability_estimate,0.550413907,0.413505375
+Jamaica,political_stability_estimate,0.217914656,0.379746348
+Jordan,political_stability_estimate,-0.315793395,-0.296307683
+Japan,political_stability_estimate,1.015356421,1.073910952
+Kazakhstan,political_stability_estimate,-0.231327519,-0.356833428
+Kenya,political_stability_estimate,-1.032414198,-0.94308722
+Kyrgyz Republic,political_stability_estimate,-0.467156112,-0.546579063
+Cambodia,political_stability_estimate,-0.131573156,-0.036172446
+Kiribati,political_stability_estimate,1.13891089,1.11602664
+St. Kitts and Nevis,political_stability_estimate,0.949530005,0.943862259
+"Korea, Rep.",political_stability_estimate,0.629525959,0.56241101
+Kuwait,political_stability_estimate,0.262982517,0.281217426
+Latin America & Caribbean (excluding high income),political_stability_estimate,,
+Lao PDR,political_stability_estimate,0.71241802,0.80272752
+Lebanon,political_stability_estimate,-1.481944561,-1.473512411
+Liberia,political_stability_estimate,-0.286361516,-0.29159987
+Libya,political_stability_estimate,-2.308345795,-2.197963476
+St. Lucia,political_stability_estimate,0.831884623,0.869225919
+Latin America & Caribbean,political_stability_estimate,,
+Least developed countries: UN classification,political_stability_estimate,,
+Low income,political_stability_estimate,,
+Liechtenstein,political_stability_estimate,1.595491529,1.644336104
+Sri Lanka,political_stability_estimate,-0.376803756,-0.785569847
+Lower middle income,political_stability_estimate,,
+Low & middle income,political_stability_estimate,,
+Lesotho,political_stability_estimate,-0.213269129,-0.134738371
+Late-demographic dividend,political_stability_estimate,,
+Lithuania,political_stability_estimate,0.80971843,0.653739512
+Luxembourg,political_stability_estimate,1.193919539,1.063888907
+Latvia,political_stability_estimate,0.673323035,0.480724365
+"Macao SAR, China",political_stability_estimate,1.028874636,1.127567887
+St. Martin (French part),political_stability_estimate,,
+Morocco,political_stability_estimate,-0.402591288,-0.319889188
+Monaco,political_stability_estimate,1.172496915,1.204843044
+Moldova,political_stability_estimate,-0.205342084,-0.668324411
+Madagascar,political_stability_estimate,-0.54227978,-0.531038582
+Maldives,political_stability_estimate,0.534778357,0.667752326
+Middle East & North Africa,political_stability_estimate,,
+Mexico,political_stability_estimate,-0.688360929,-0.691959739
+Marshall Islands,political_stability_estimate,0.933938026,1.056267262
+Middle income,political_stability_estimate,,
+North Macedonia,political_stability_estimate,0.062417198,0.117590658
+Mali,political_stability_estimate,-2.332805395,-2.479408979
+Malta,political_stability_estimate,0.887379706,0.913422585
+Myanmar,political_stability_estimate,-2.083969355,-2.21174264
+Middle East & North Africa (excluding high income),political_stability_estimate,,
+Montenegro,political_stability_estimate,-0.052502058,-0.059176981
+Mongolia,political_stability_estimate,0.705798924,0.533999085
+Northern Mariana Islands,political_stability_estimate,,
+Mozambique,political_stability_estimate,-1.259354234,-1.287969947
+Mauritania,political_stability_estimate,-0.555529892,-0.507473767
+Mauritius,political_stability_estimate,0.832465351,0.835721731
+Malawi,political_stability_estimate,-0.109315783,-0.15286392
+Malaysia,political_stability_estimate,0.058753986,0.140358165
+North America,political_stability_estimate,,
+Namibia,political_stability_estimate,0.518684864,0.556306064
+New Caledonia,political_stability_estimate,,
+Niger,political_stability_estimate,-1.53848505,-1.472179294
+Nigeria,political_stability_estimate,-1.787299275,-1.798141479
+Nicaragua,political_stability_estimate,-0.471998215,-0.348428488
+Netherlands,political_stability_estimate,0.892923951,0.717304826
+Norway,political_stability_estimate,1.088475108,0.860958338
+Nepal,political_stability_estimate,-0.188807815,-0.251907498
+Nauru,political_stability_estimate,0.787112117,0.880902827
+New Zealand,political_stability_estimate,1.395236254,1.31238234
+OECD members,political_stability_estimate,,
+Oman,political_stability_estimate,0.431887984,0.529911399
+Other small states,political_stability_estimate,,
+Pakistan,political_stability_estimate,-1.713656187,-1.900261998
+Panama,political_stability_estimate,0.307120055,0.297832072
+Peru,political_stability_estimate,-0.355285466,-0.446338385
+Philippines,political_stability_estimate,-0.984003067,-0.712976396
+Palau,political_stability_estimate,1.172233224,1.096862912
+Papua New Guinea,political_stability_estimate,-0.576708913,-0.609061778
+Poland,political_stability_estimate,0.491801322,0.500283241
+Pre-demographic dividend,political_stability_estimate,,
+Puerto Rico,political_stability_estimate,0.487989306,0.543191195
+"Korea, Dem. People's Rep.",political_stability_estimate,-0.477292448,-0.412224323
+Portugal,political_stability_estimate,0.93725127,0.860719681
+Paraguay,political_stability_estimate,-0.000999591,0.035977952
+West Bank and Gaza,political_stability_estimate,-1.836833954,-1.817886233
+Pacific island small states,political_stability_estimate,,
+Post-demographic dividend,political_stability_estimate,,
+French Polynesia,political_stability_estimate,,
+Qatar,political_stability_estimate,0.83326143,0.958558142
+Romania,political_stability_estimate,0.581680298,0.48802197
+Russian Federation,political_stability_estimate,-0.707901835,-0.91899544
+Rwanda,political_stability_estimate,0.071905822,0.030513978
+South Asia,political_stability_estimate,,
+Saudi Arabia,political_stability_estimate,-0.59113127,-0.362989008
+Sudan,political_stability_estimate,-1.987572193,-1.998894215
+Senegal,political_stability_estimate,-0.179818049,-0.153299466
+Singapore,political_stability_estimate,1.442324996,1.45994246
+Solomon Islands,political_stability_estimate,0.541670024,0.379514664
+Sierra Leone,political_stability_estimate,-0.097025879,-0.089501671
+El Salvador,political_stability_estimate,-0.09154629,-0.153124496
+San Marino,political_stability_estimate,1.172496915,1.204843044
+Somalia,political_stability_estimate,-2.727175713,-2.483434439
+Serbia,political_stability_estimate,-0.085266188,-0.172904298
+Sub-Saharan Africa (excluding high income),political_stability_estimate,,
+South Sudan,political_stability_estimate,-2.287201405,-2.210053921
+Sub-Saharan Africa,political_stability_estimate,,
+Small states,political_stability_estimate,,
+Sao Tome and Principe,political_stability_estimate,0.58509469,0.607801914
+Suriname,political_stability_estimate,0.348301739,0.396292031
+Slovak Republic,political_stability_estimate,0.617806435,0.443434268
+Slovenia,political_stability_estimate,0.755461395,0.706639647
+Sweden,political_stability_estimate,1.014362812,0.902623057
+Eswatini,political_stability_estimate,-0.34604305,-0.24972333
+Sint Maarten (Dutch part),political_stability_estimate,,
+Seychelles,political_stability_estimate,0.744613945,0.75640434
+Syrian Arab Republic,political_stability_estimate,-2.65949297,-2.79725194
+Turks and Caicos Islands,political_stability_estimate,,
+Chad,political_stability_estimate,-1.389812827,-1.483703375
+East Asia & Pacific (IDA & IBRD countries),political_stability_estimate,,
+Europe & Central Asia (IDA & IBRD countries),political_stability_estimate,,
+Togo,political_stability_estimate,-0.695711434,-0.711050153
+Thailand,political_stability_estimate,-0.568726182,-0.383099318
+Tajikistan,political_stability_estimate,-0.676817954,-0.694840014
+Turkmenistan,political_stability_estimate,-0.332011014,-0.100280806
+Latin America & the Caribbean (IDA & IBRD countries),political_stability_estimate,,
+Timor-Leste,political_stability_estimate,0.19231537,0.273400307
+Middle East & North Africa (IDA & IBRD countries),political_stability_estimate,,
+Tonga,political_stability_estimate,1.078965783,1.114246726
+South Asia (IDA & IBRD),political_stability_estimate,,
+Sub-Saharan Africa (IDA & IBRD countries),political_stability_estimate,,
+Trinidad and Tobago,political_stability_estimate,0.239029333,0.357974648
+Tunisia,political_stability_estimate,-0.756551445,-0.596295178
+Turkiye,political_stability_estimate,-1.13676095,-1.039865017
+Tuvalu,political_stability_estimate,1.267683268,1.184532285
+Tanzania,political_stability_estimate,-0.335592777,-0.265859962
+Uganda,political_stability_estimate,-0.937743247,-0.807034194
+Ukraine,political_stability_estimate,-1.126953006,-1.997604966
+Upper middle income,political_stability_estimate,,
+Uruguay,political_stability_estimate,1.045823932,1.095464587
+United States,political_stability_estimate,-0.014877876,-0.036005028
+Uzbekistan,political_stability_estimate,-0.252974153,-0.19621487
+St. Vincent and the Grenadines,political_stability_estimate,1.040163636,1.043798447
+"Venezuela, RB",political_stability_estimate,-1.45388782,-1.256462216
+British Virgin Islands,political_stability_estimate,,
+Virgin Islands (U.S.),political_stability_estimate,0.476192206,0.563698709
+Viet Nam,political_stability_estimate,-0.118189707,-0.030564662
+Vanuatu,political_stability_estimate,0.900379121,0.9496755
+World,political_stability_estimate,,
+Samoa,political_stability_estimate,1.106232166,1.078609109
+Kosovo,political_stability_estimate,-0.113625251,-0.252448589
+"Yemen, Rep.",political_stability_estimate,-2.580309629,-2.476880312
+South Africa,political_stability_estimate,-0.75098139,-0.72211808
+Zambia,political_stability_estimate,0.052347746,0.102313563
+Zimbabwe,political_stability_estimate,-0.954425931,-0.884499907
